@@ -1,8 +1,7 @@
 <template>
-  <div>
-    <h2>{{ movie.nome }}</h2>
-    <p> {{ movie.horario }}</p>
-    <!-- Outras informações do filme... -->
+  <div id="horario-container">
+    <p id="horario">{{ movie.horario }}</p>
+    <p id="horario">{{ movie.legenda }}</p>
   </div>
 </template>
 
@@ -12,4 +11,13 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+#horario {
+  margin: 0;
+}
+#horario-container {
+  border: 1px solid grey;
+  height: 64px;
+  width: 120px;
+}
+</style>

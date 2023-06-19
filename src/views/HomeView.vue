@@ -11,7 +11,6 @@ const fetchFileData = async () => {
     const response = await axios.get(text);
     const fileData = response.data;
 
-    // Faça o processamento necessário com os dados do arquivo txt
     const movieLines = fileData.split("\n");
 
     const movieData = {};
@@ -48,19 +47,67 @@ const fetchFileData = async () => {
   }
 };
 
-onMounted(fetchFileData);
+const getMovieAge = (nomeFilme) => {
+  const movieList = movies.value[nomeFilme];
+  if (movieList && movieList.length > 0) {
+    return movieList[0].idade;
+  }
+  return "";
+};
+
+fetchFileData();
 </script>
 
 <template>
   <div>
-    <h1>Hello World</h1>
-    <div v-for="nomeFilme in Object.keys(movies)" :key="nomeFilme">
-      <h2>{{ nomeFilme }}</h2>
-      <div v-for="movie in movies[nomeFilme]" :key="movie.codigo">
-        <MovieComponent :movie="movie" />
+    <div
+      v-for="nomeFilme in Object.keys(movies)"
+      :key="nomeFilme"
+      class="movie-row"
+    >
+      <div class="name-age-container">
+        <h2 class="movie-name">{{ nomeFilme }}</h2>
+      </div>
+      <div class="name-age-container">
+        <p class="movie-age">
+          {{ getMovieAge(nomeFilme) === "0" ? "L" : getMovieAge(nomeFilme) }}
+        </p>
+      </div>
+      <div class="info-row">
+        <template v-for="movie in movies[nomeFilme]" :key="movie.codigo">
+          <MovieComponent :movie="movie" />
+        </template>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.movie-row {
+  display: flex;
+  max-width: 100%;
+}
+.name-age-container {
+  display: flex;
+  align-items: center;
+  border: 1px solid grey;
+}
+.movie-name {
+  font-size: 20px;
+  margin: 0;
+  min-width: 300px;
+  text-align: left;
+  padding-left: 12px;
+}
+
+.movie-age {
+  font-size: 20px;
+  margin: 0;
+  min-width: 60px;
+}
+
+.info-row {
+  display: flex;
+  flex-wrap: wrap;
+}
+</style>
