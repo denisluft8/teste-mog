@@ -1,9 +1,10 @@
 <script setup>
 import text from "../assets/GRADE_DESTAQUE_688.txt";
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import axios from "axios";
 import MovieComponent from "../components/MovieComponent.vue";
 
+const movieTypes = ref([]);
 const movies = ref([]);
 
 const fetchFileData = async () => {
@@ -42,6 +43,14 @@ const fetchFileData = async () => {
     }
 
     movies.value = movieData;
+
+    movieTypes.value = [
+      ...new Set(
+        Object.values(movieData).flatMap((movieList) =>
+          movieList.map((movie) => movie.tipoExibicao)
+        )
+      ),
+    ];
   } catch (error) {
     console.error("Erro ao acessar o arquivo txt:", error);
   }
@@ -55,30 +64,51 @@ const getMovieAge = (nomeFilme) => {
   return "";
 };
 
+const getMoviesByType = (nomeFilme, movieType) => {
+  const movieList = movies.value[nomeFilme];
+  if (movieList && movieList.length > 0) {
+    return movieList.filter((movie) => movie.tipoExibicao === movieType);
+  }
+  return [];
+};
+
+const getMovieTypesByMovie = (nomeFilme) => {
+  const movieList = movies.value[nomeFilme];
+  if (movieList && movieList.length > 0) {
+    return [...new Set(movieList.map((movie) => movie.tipoExibicao))];
+  }
+  return [];
+};
+
 fetchFileData();
 </script>
 
 <template>
   <div>
-    <div
-      v-for="nomeFilme in Object.keys(movies)"
-      :key="nomeFilme"
-      class="movie-row"
-    >
-      <div class="name-age-container">
-        <h2 class="movie-name">{{ nomeFilme }}</h2>
-      </div>
-      <div class="name-age-container">
-        <p class="movie-age">
-          {{ getMovieAge(nomeFilme) === "0" ? "L" : getMovieAge(nomeFilme) }}
-        </p>
-      </div>
-      <div class="info-row">
-        <template v-for="movie in movies[nomeFilme]" :key="movie.codigo">
-          <MovieComponent :movie="movie" />
-        </template>
-      </div>
-    </div>
+    <template v-for="nomeFilme in Object.keys(movies)">
+      <template v-for="movieType in getMovieTypesByMovie(nomeFilme)">
+        <div class="movie-row">
+          <div class="name-age-container">
+            <h2 class="movie-name">{{ nomeFilme }}</h2>
+          </div>
+          <div class="name-age-container">
+            <p class="movie-age">
+              {{
+                getMovieAge(nomeFilme) === "0" ? "L" : getMovieAge(nomeFilme)
+              }}
+            </p>
+          </div>
+          <div class="name-age-container">
+            <p class="movie-age">{{ movieType }}</p>
+          </div>
+          <div class="info-row">
+            <template v-for="movie in getMoviesByType(nomeFilme, movieType)">
+              <MovieComponent :movie="movie" />
+            </template>
+          </div>
+        </div>
+      </template>
+    </template>
   </div>
 </template>
 
