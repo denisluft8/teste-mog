@@ -3,6 +3,7 @@ import text from "../assets/GRADE_DESTAQUE_688.txt";
 import { ref } from "vue";
 import axios from "axios";
 import MovieComponent from "../components/MovieComponent.vue";
+import RotatingCubeComponent from "../components/RotatingCubeComponent.vue";
 
 const movieTypes = ref([]);
 const movies = ref([]);
@@ -26,13 +27,13 @@ const fetchFileData = async () => {
       const movie = {
         sala: line.substring(0, 2).trim(),
         codigo: line.substring(2, 10).trim(),
-        horario: line.substring(10, 15).trim(),
+        horario:
+          line.substring(10, 12).trim() + ":" + line.substring(13, 15).trim(),
         idade: line.substring(75, 77).trim(),
         vazio: line.substring(78, 79).trim(),
         legenda: line.substring(80, 81).trim(), //L=legendado, D =dublado, V=versão original, S=sem dialogos
         sessao: line.substring(81, 82).trim(), //S=SESSÃO ESGOTADA/INDISPONÍVEL, N=SESSÃO DISPONÍVEL
         estreia: line.substring(82, 83).trim(), //N=CÓPIA NORMAL, P=PRÉ-ESTREIA
-        tresD: line.substring(83, 84).trim(), //S=FILME 3D, N=FILME 2D, X=FILME XD 2D, Y=FILME XD 3D
         vip: line.substring(84, 85).trim(), //S=SIM (100% VIP), H=HIBRIDO (VIP e REGULAR), N=NÃO (SEM LUGARES VIP)
         duracao: line.substring(85, 88).trim(), //duração em minutos
         lotacao: line.substring(89, 90).trim(), //M=MUITOS (DE 0% A 59%), P=POUCOS (DE 60% A 89% ), L=LOTADO (DE 90% A 100%)
@@ -56,6 +57,16 @@ const fetchFileData = async () => {
   }
 };
 
+const handleMovieType = (movieType) => {
+  if (movieType === "S") {
+    return "3D";
+  } else if (movieType === "N") {
+    return "2D";
+  } else if (movieType === "X" || "Y") {
+    return movieType;
+  }
+};
+
 const getMovieAge = (nomeFilme) => {
   const movieList = movies.value[nomeFilme];
   if (movieList && movieList.length > 0) {
@@ -67,7 +78,14 @@ const getMovieAge = (nomeFilme) => {
 const getMoviesByType = (nomeFilme, movieType) => {
   const movieList = movies.value[nomeFilme];
   if (movieList && movieList.length > 0) {
-    return movieList.filter((movie) => movie.tipoExibicao === movieType);
+    const filteredMovies = movieList.filter(
+      (movie) => movie.tipoExibicao === movieType
+    );
+    return filteredMovies.sort((a, b) => {
+      const timeA = new Date(`1970/01/01 ${a.horario}`);
+      const timeB = new Date(`1970/01/01 ${b.horario}`);
+      return timeA - timeB;
+    });
   }
   return [];
 };
@@ -80,6 +98,16 @@ const getMovieTypesByMovie = (nomeFilme) => {
   return [];
 };
 
+const isVipMovie = (nomeFilme, movieType) => {
+  const movieList = movies.value[nomeFilme];
+  if (movieList && movieList.length > 0) {
+    return movieList.some(
+      (movie) => movie.tipoExibicao === movieType && movie.vip === "S"
+    );
+  }
+  return false;
+};
+
 fetchFileData();
 </script>
 
@@ -87,19 +115,39 @@ fetchFileData();
   <div>
     <template v-for="nomeFilme in Object.keys(movies)">
       <template v-for="movieType in getMovieTypesByMovie(nomeFilme)">
-        <div class="movie-row">
+        <div
+          :class="{
+            'movie-row-vip': isVipMovie(nomeFilme, movieType),
+            'movie-row': !isVipMovie(nomeFilme, movieType),
+          }"
+        >
           <div class="name-age-container">
             <h2 class="movie-name">{{ nomeFilme }}</h2>
           </div>
-          <div class="name-age-container">
-            <p class="movie-age">
+          <div class="age-container">
+            <p
+              :class="{
+                'age-orange': getMovieAge(nomeFilme) === '14',
+                'age-yellow': getMovieAge(nomeFilme) === '12',
+                'age-green': getMovieAge(nomeFilme) === '0',
+                'age-blue': getMovieAge(nomeFilme) === '10',
+              }"
+            >
               {{
                 getMovieAge(nomeFilme) === "0" ? "L" : getMovieAge(nomeFilme)
               }}
             </p>
           </div>
-          <div class="name-age-container">
-            <p class="movie-age">{{ movieType }}</p>
+          <div
+            v-if="movieType === 'X' || movieType === 'Y'"
+            class="type-container"
+          >
+            <RotatingCubeComponent :movieType="movieType" />
+          </div>
+          <div v-else class="type-container">
+            <p class="movie-type">
+              {{ handleMovieType(movieType) }}
+            </p>
           </div>
           <div class="info-row">
             <template v-for="movie in getMoviesByType(nomeFilme, movieType)">
@@ -116,24 +164,78 @@ fetchFileData();
 .movie-row {
   display: flex;
   max-width: 100%;
+  background: #a0a1a4;
+}
+.movie-row-vip {
+  display: flex;
+  max-width: 100%;
 }
 .name-age-container {
   display: flex;
   align-items: center;
   border: 1px solid grey;
+  background-color: #222326;
+}
+
+.type-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid grey;
+  background-image: linear-gradient(to bottom right, #4d4a47, #676363);
+  min-width: 60px;
+}
+
+.age-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid grey;
+  min-width: 60px;
+  background-color: #302e34;
 }
 .movie-name {
   font-size: 20px;
   margin: 0;
-  min-width: 300px;
+  min-width: 320px;
   text-align: left;
   padding-left: 12px;
 }
 
-.movie-age {
+.age-orange,
+.age-yellow,
+.age-green,
+.age-blue {
   font-size: 20px;
   margin: 0;
-  min-width: 60px;
+  width: 30px;
+  border-radius: 2px;
+  font-weight: 900;
+}
+
+.age-orange {
+  background-color: #ff7300;
+  box-shadow: 1px 1px 5px 1px #000;
+}
+.age-yellow {
+  background-color: #f1ae02;
+  box-shadow: 1px 1px 5px 1px #000;
+}
+.age-green {
+  background-color: #02a929;
+  box-shadow: 1px 1px 5px 1px #000;
+}
+.age-blue {
+  background-color: #0280e3;
+  box-shadow: 1px 1px 5px 1px #000;
+}
+
+.movie-type {
+  font-size: 32px;
+  margin: 0;
+  color: #686768;
+  font-weight: 900;
+  text-shadow: 1px 1px 5px #222;
 }
 
 .info-row {
