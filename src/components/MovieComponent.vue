@@ -5,7 +5,7 @@ const props = defineProps({
   movie: Object,
 });
 
-const currentTime = ref(new Date("2023-06-22T09:00:00"));
+const currentTime = ref(new Date());
 
 const isTimeNear = computed(() => {
   const currentHour = currentTime.value.getHours();
@@ -21,6 +21,10 @@ const isSoldOut = computed(() => {
   return props.movie.sessao === "S";
 });
 
+const isVip = computed(() => {
+  return props.movie.poltrona === "VP";
+});
+
 const isPastTime = computed(() => {
   const currentHour = currentTime.value.getHours();
   const currentMinute = currentTime.value.getMinutes();
@@ -29,10 +33,6 @@ const isPastTime = computed(() => {
     currentHour > movieHour ||
     (currentHour === movieHour && currentMinute > movieMinute)
   );
-});
-
-const isVip = computed(() => {
-  return props.movie.vip === "S" ? true : false;
 });
 
 watch(currentTime, () => {
@@ -48,27 +48,49 @@ function forceUpdate() {
   vm.render = () => render();
 }
 </script>
-
 <template>
-  <div
-    v-if="!isPastTime && !isSoldOut"
-    :class="{
-      'sold-out': isSoldOut,
-      'not-sold-out': !isSoldOut,
-      'green-background': isTimeNear,
-    }"
-  >
-    <p class="horario">{{ movie.horario }}</p>
-    <p class="legenda">{{ movie.legenda === "L" ? "LEG" : "DUB" }}</p>
-  </div>
+  <template v-if="isVip">
+    <div
+      v-if="!isPastTime && !isSoldOut"
+      :class="{
+        'sold-out': isSoldOut,
+        'not-sold-out': !isSoldOut,
+        'vip-session': isVip,
+        'green-background': isTimeNear,
+      }"
+    >
+      <p class="horario-vip">{{ movie.horario }}</p>
+      <p class="legenda-vip">{{ movie.legenda === "L" ? "LEG" : "DUB" }}</p>
+      <p class="premier">PREMIER</p>
+    </div>
+  </template>
+  <template v-else>
+    <div
+      v-if="!isPastTime && !isSoldOut"
+      :class="{
+        'sold-out': isSoldOut,
+        'not-sold-out': !isSoldOut,
+        'vip-session': isVip,
+        'green-background': isTimeNear,
+      }"
+    >
+      <p class="horario">{{ movie.horario }}</p>
+      <p class="legenda">{{ movie.legenda === "L" ? "LEG" : "DUB" }}</p>
+    </div>
+  </template>
 </template>
 
 <style scoped>
-.horario {
+.horario,
+.horario-vip {
   margin: 0;
   font-size: 24px;
   font-weight: 800;
   color: #333;
+}
+
+.horario-vip {
+  color: #ddd;
 }
 
 .not-sold-out,
@@ -91,7 +113,20 @@ function forceUpdate() {
   background: red;
 }
 
-.legenda {
+.vip-session {
+  background-color: #000;
+}
+
+.premier {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f9ee96;
+  text-shadow: 1px 1px 16px #f9ee96;
+}
+
+.legenda,
+.legenda-vip {
   background-color: #aeadb0;
   font-size: 12px;
   margin: 0;
@@ -100,5 +135,9 @@ function forceUpdate() {
   width: 48px;
   border-radius: 20px;
   box-shadow: inset 1px 1px 3px #000;
+}
+
+.legenda-vip {
+  font-size: 10px;
 }
 </style>

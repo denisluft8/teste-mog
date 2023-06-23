@@ -25,19 +25,14 @@ const fetchFileData = async () => {
       }
 
       const movie = {
-        sala: line.substring(0, 2).trim(),
         codigo: line.substring(2, 10).trim(),
         horario:
           line.substring(10, 12).trim() + ":" + line.substring(13, 15).trim(),
         idade: line.substring(75, 77).trim(),
-        vazio: line.substring(78, 79).trim(),
         legenda: line.substring(80, 81).trim(), //L=legendado, D =dublado, V=versão original, S=sem dialogos
         sessao: line.substring(81, 82).trim(), //S=SESSÃO ESGOTADA/INDISPONÍVEL, N=SESSÃO DISPONÍVEL
-        estreia: line.substring(82, 83).trim(), //N=CÓPIA NORMAL, P=PRÉ-ESTREIA
-        vip: line.substring(84, 85).trim(), //S=SIM (100% VIP), H=HIBRIDO (VIP e REGULAR), N=NÃO (SEM LUGARES VIP)
-        duracao: line.substring(85, 88).trim(), //duração em minutos
-        lotacao: line.substring(89, 90).trim(), //M=MUITOS (DE 0% A 59%), P=POUCOS (DE 60% A 89% ), L=LOTADO (DE 90% A 100%)
         tipoExibicao: line.substring(91, 93).trim(), //NO=(NORMAL), 3D=(3D), XD=(XD), X3=(XD 3D)
+        poltrona: line.substring(174, 176).trim(), // "SIGLAS: RE = REGULAR, DB = DB0X, VP = PREMIER
       };
 
       movieData[nome].push(movie);
@@ -58,11 +53,13 @@ const fetchFileData = async () => {
 };
 
 const handleMovieType = (movieType) => {
-  if (movieType === "S") {
+  if (movieType === "3D") {
     return "3D";
-  } else if (movieType === "N") {
+  } else if (movieType === "NO") {
     return "2D";
-  } else if (movieType === "X" || "Y") {
+  } else if (movieType === "XD") {
+    return "XD";
+  } else if (movieType === "X3") {
     return movieType;
   }
 };
@@ -98,16 +95,6 @@ const getMovieTypesByMovie = (nomeFilme) => {
   return [];
 };
 
-const isVipMovie = (nomeFilme, movieType) => {
-  const movieList = movies.value[nomeFilme];
-  if (movieList && movieList.length > 0) {
-    return movieList.some(
-      (movie) => movie.tipoExibicao === movieType && movie.vip === "S"
-    );
-  }
-  return false;
-};
-
 fetchFileData();
 </script>
 
@@ -115,12 +102,7 @@ fetchFileData();
   <div>
     <template v-for="nomeFilme in Object.keys(movies)">
       <template v-for="movieType in getMovieTypesByMovie(nomeFilme)">
-        <div
-          :class="{
-            'movie-row-vip': isVipMovie(nomeFilme, movieType),
-            'movie-row': !isVipMovie(nomeFilme, movieType),
-          }"
-        >
+        <div class="movie-row">
           <div class="name-age-container">
             <h2 class="movie-name">{{ nomeFilme }}</h2>
           </div>
@@ -138,14 +120,16 @@ fetchFileData();
               }}
             </p>
           </div>
-          <div
-            v-if="movieType === 'X' || movieType === 'Y'"
-            class="type-container"
-          >
+          <div v-if="movieType === 'X3'" class="type-container">
             <RotatingCubeComponent :movieType="movieType" />
           </div>
           <div v-else class="type-container">
-            <p class="movie-type">
+            <p
+              :class="{
+                'movie-type': handleMovieType(movieType) !== 'XD',
+                'movie-type movie-type-xd': handleMovieType(movieType) === 'XD',
+              }"
+            >
               {{ handleMovieType(movieType) }}
             </p>
           </div>
@@ -183,7 +167,7 @@ fetchFileData();
   justify-content: center;
   border: 1px solid grey;
   background-image: linear-gradient(to bottom right, #4d4a47, #676363);
-  min-width: 60px;
+  min-width: 72px;
 }
 
 .age-container {
@@ -236,6 +220,13 @@ fetchFileData();
   color: #686768;
   font-weight: 900;
   text-shadow: 1px 1px 5px #222;
+}
+
+.movie-type-xd {
+  font-weight: 600;
+  font-size: 32px;
+  color: #e6e4e5;
+  text-shadow: 1px 1px 10px #aaa;
 }
 
 .info-row {
